@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -63,9 +65,9 @@ fun VideoCard(v: Video, watched: Boolean, onClick: () -> Unit) {
             )
             if (watched) Tag("WATCHED", Modifier.align(Alignment.TopEnd).padding(6.dp))
         }
-        Spacer(Modifier.height(8.dp))
-        Text(v.title, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 20.sp)
-        Text(v.channel + " · " + v.hnLine, color = TextDim, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(6.dp))
+        Text(v.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
+        Text(v.channel + " · " + v.hnLine, color = TextDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -73,31 +75,37 @@ fun VideoCard(v: Video, watched: Boolean, onClick: () -> Unit) {
 private fun Tag(text: String, modifier: Modifier = Modifier) {
     Text(
         text, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
-        modifier = modifier.background(Color.Black.copy(alpha = 0.7f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
+        modifier = modifier.background(Color.Black.copy(alpha = 0.75f), RoundedCornerShape(4.dp)).padding(horizontal = 6.dp, vertical = 2.dp),
     )
 }
 
+/** A pill button. The primary one is white with black text so it reads on the green display. */
 @Composable
 fun ActionButton(label: String, primary: Boolean = false, focusRequester: FocusRequester? = null, onClick: () -> Unit) {
     val (interaction, focused) = rememberFocus()
     val shape = RoundedCornerShape(24.dp)
     val bg = when {
-        primary && focused.value -> Color(0xFFFF8533)
-        primary -> Orange
+        primary -> Color.White
         focused.value -> SurfaceFocused
         else -> Surface
     }
     Text(
-        label, fontSize = 17.sp, fontWeight = FontWeight.SemiBold, color = Color.White,
+        label, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = if (primary) Color.Black else Color.White,
         modifier = Modifier
             .let { if (focusRequester != null) it.focusRequester(focusRequester) else it }
             .background(bg, shape)
             .focusFrame(interaction, shape, fill = false)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 22.dp, vertical = 12.dp),
+            .padding(horizontal = 18.dp, vertical = 10.dp),
     )
 }
 
+@Composable
+private fun SectionTitle(text: String) {
+    Text(text, color = Heading, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun VideoScreen(catalog: Catalog, marks: Marks, v: Video, open: (Screen) -> Unit) {
     val context = LocalContext.current
@@ -106,80 +114,95 @@ fun VideoScreen(catalog: Catalog, marks: Marks, v: Video, open: (Screen) -> Unit
     val related = remember(v.id) { catalog.related(v) }
     val playFocus = remember { FocusRequester() }
     val playerName = remember { Player.playerName(context) }
-    // The remote lands on Play straight away.
+    val compact = isCompact()
+    // Focus lands on Play straight away: one tap on the touchpad or remote starts the video.
     LaunchedEffect(v.id) { runCatching { playFocus.requestFocus() } }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(24.dp)) {
+    val facts: @Composable () -> Unit = {
+        Text(v.title, fontSize = if (compact) 20.sp else 26.sp, fontWeight = FontWeight.Bold, lineHeight = if (compact) 25.sp else 32.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(v.channel, color = Heading, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            listOf(v.kind, v.level, v.topic).filter { it.isNotBlank() && it != "general" && it != "other" }.joinToString(" · ") + "\n" + v.hnLine,
+            color = TextDim, fontSize = 14.sp, lineHeight = 20.sp,
+        )
+        Spacer(Modifier.height(12.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            ActionButton("▶  Play in $playerName", primary = true, focusRequester = playFocus) {
+                marks.setWatched(v.id, true)
+                Player.play(context, v)
+            }
+            val saved = v.id in later
+            ActionButton(if (saved) "✓ Saved" else "Save for later") { marks.setLater(v.id, !saved) }
+            val seen = v.id in watched
+            ActionButton(if (seen) "Watched ✓" else "Mark watched") { marks.setWatched(v.id, !seen) }
+        }
+    }
+    val thumb: @Composable (Modifier) -> Unit = { m ->
+        AsyncImage(
+            model = v.thumbnail, contentDescription = null, contentScale = ContentScale.Crop,
+            modifier = m.aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp)).background(Color.Black),
+        )
+    }
+
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = gutter(), vertical = 16.dp)) {
         item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                AsyncImage(
-                    model = v.thumbnail, contentDescription = null, contentScale = ContentScale.Crop,
-                    modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(0.45f).aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp)).background(Color.Black),
-                )
-                Column(Modifier.weight(1f)) {
-                    Text(v.title, fontSize = 26.sp, fontWeight = FontWeight.Bold, lineHeight = 32.sp)
-                    Spacer(Modifier.height(6.dp))
-                    Text(v.channel, color = Orange, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        listOf(v.kind, v.level, v.topic).filter { it.isNotBlank() && it != "general" && it != "other" }.joinToString(" · ") + "\n" + v.hnLine,
-                        color = TextDim, fontSize = 15.sp, lineHeight = 21.sp,
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ActionButton("▶  Play in $playerName", primary = true, focusRequester = playFocus) {
-                            marks.setWatched(v.id, true)
-                            Player.play(context, v)
-                        }
-                        val saved = v.id in later
-                        ActionButton(if (saved) "✓ Saved" else "Save for later") { marks.setLater(v.id, !saved) }
-                        val seen = v.id in watched
-                        ActionButton(if (seen) "Watched ✓" else "Mark watched") { marks.setWatched(v.id, !seen) }
-                    }
+            if (compact) {
+                Column {
+                    thumb(Modifier.fillMaxWidth())
+                    Spacer(Modifier.height(12.dp))
+                    facts()
+                }
+            } else {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    thumb(Modifier.widthIn(max = 480.dp).fillMaxWidth(0.45f))
+                    Column(Modifier.weight(1f)) { facts() }
                 }
             }
         }
         item {
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(20.dp))
             if (v.whyHn.isNotBlank()) {
-                Text("Why Hacker News recommends it", color = Orange, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text(v.whyHn, fontSize = 18.sp, lineHeight = 26.sp, modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
+                SectionTitle("Why Hacker News recommends it")
+                Text(v.whyHn, fontSize = 17.sp, lineHeight = 24.sp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
             }
             if (v.summary.isNotBlank()) {
-                Text("What it is", color = Orange, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                Text(v.summary, fontSize = 17.sp, lineHeight = 25.sp, color = Color(0xFFE0E0E6), modifier = Modifier.padding(top = 4.dp, bottom = 16.dp))
+                SectionTitle("What it is")
+                Text(v.summary, fontSize = 16.sp, lineHeight = 23.sp, color = Color(0xFFE0E0E0), modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
             }
             if (v.quote.isNotBlank()) {
-                Text("“${v.quote}”", fontSize = 19.sp, fontStyle = FontStyle.Italic, lineHeight = 27.sp)
-                Text("— a Hacker News comment, ${v.quoteYear}", color = TextDim, fontSize = 14.sp, modifier = Modifier.padding(top = 2.dp, bottom = 16.dp))
+                Text("“${v.quote}”", fontSize = 18.sp, fontStyle = FontStyle.Italic, lineHeight = 25.sp)
+                Text("— a Hacker News comment, ${v.quoteYear}", color = TextDim, fontSize = 13.sp, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp))
             }
         }
         if (v.comments.isNotEmpty()) {
-            item { Text("Hacker News says", color = Orange, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 6.dp)) }
+            item { SectionTitle("Hacker News says"); Spacer(Modifier.height(4.dp)) }
             items(v.comments, key = { it.id }) { c ->
-                Column(Modifier.fillMaxWidth().padding(vertical = 6.dp).background(Surface, RoundedCornerShape(8.dp)).padding(14.dp)) {
-                    if (c.quote.isNotBlank()) Text("“${c.quote}”", fontSize = 16.sp, lineHeight = 23.sp)
-                    if (c.why.isNotBlank()) Text(c.why, color = Color(0xFFD0D0D8), fontSize = 15.sp, lineHeight = 22.sp, modifier = Modifier.padding(top = if (c.quote.isNotBlank()) 4.dp else 0.dp))
+                Column(Modifier.fillMaxWidth().padding(vertical = 5.dp).background(Surface, RoundedCornerShape(8.dp)).padding(12.dp)) {
+                    if (c.quote.isNotBlank()) Text("“${c.quote}”", fontSize = 15.sp, lineHeight = 21.sp)
+                    if (c.why.isNotBlank()) Text(c.why, color = Color(0xFFD0D0D0), fontSize = 14.sp, lineHeight = 20.sp, modifier = Modifier.padding(top = if (c.quote.isNotBlank()) 4.dp else 0.dp))
                     Text(
                         "${c.author} · ${c.month}" + (if (c.strong) " · strong recommendation" else "") + (if (c.story.isNotBlank()) " · in “${c.story}”" else ""),
-                        color = TextDim, fontSize = 13.sp, modifier = Modifier.padding(top = 6.dp),
+                        color = TextDim, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp),
                     )
                 }
             }
         }
         if (related.isNotEmpty()) {
             item {
-                Spacer(Modifier.height(20.dp))
-                Text("People who recommended this also recommended", color = Orange, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Spacer(Modifier.height(18.dp))
+                SectionTitle("People who recommended this also recommended")
+                Spacer(Modifier.height(8.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(related, key = { it.id }) { r ->
-                        Box(Modifier.width(280.dp)) { VideoCard(r, watched = r.id in watched) { open(Screen.Detail(r)) } }
+                        Box(Modifier.width(if (compact) 200.dp else 280.dp)) { VideoCard(r, watched = r.id in watched) { open(Screen.Detail(r)) } }
                     }
                 }
             }
         }
         item {
-            Spacer(Modifier.height(28.dp))
-            Text("Data: HackerTube (hackertube.org) by Andrej Karpathy, ODC-By 1.0 · ${catalog.generated}", color = TextDim, fontSize = 12.sp)
+            Spacer(Modifier.height(24.dp))
+            Text("Data: HackerTube (hackertube.org) by Andrej Karpathy, ODC-By 1.0 · ${catalog.generated}", color = TextDim, fontSize = 11.sp)
         }
     }
 }

@@ -18,21 +18,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 
+// The Rokid glasses show only the green channel, so everything that matters is drawn in
+// luminance: white text and frames on black. Orange is only for the wordmark and headings.
 val Orange = Color(0xFFFF6600)
-val Background = Color(0xFF0E0E10)
-val Surface = Color(0xFF1A1A1E)
-val SurfaceFocused = Color(0xFF2A2A30)
-val TextDim = Color(0xFFA0A0A8)
+val Background = Color(0xFF000000)
+val Surface = Color(0xFF1C1C1C)
+val SurfaceFocused = Color(0xFF3A3A3A)
+val Focus = Color.White
+val TextDim = Color(0xFFB4B4B4)
+val Heading = Color(0xFFFFB380)
 
 /** Always dark, like HackerTube; TVs and glasses look best that way. */
 @Composable
 fun HNTubeTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Orange,
-            onPrimary = Color.White,
+            primary = Color.White,
+            onPrimary = Color.Black,
             background = Background,
             surface = Surface,
             onBackground = Color.White,
@@ -43,7 +48,11 @@ fun HNTubeTheme(content: @Composable () -> Unit) {
     )
 }
 
-/** A focus frame for remote-control navigation: orange outline when the D-pad lands here. */
+/** True on the glasses (480 px wide) and on a folded phone: one column, stacked layouts. */
+@Composable
+fun isCompact(): Boolean = LocalConfiguration.current.screenWidthDp < 560
+
+/** A focus frame for touchpad / remote navigation: white outline when focus lands here. */
 @Composable
 fun Modifier.focusFrame(
     interaction: MutableInteractionSource,
@@ -52,7 +61,7 @@ fun Modifier.focusFrame(
 ): Modifier {
     val focused by interaction.collectIsFocusedAsState()
     val base = if (fill) background(if (focused) SurfaceFocused else Surface, shape) else this
-    return if (focused) base.border(BorderStroke(3.dp, Orange), shape) else base
+    return if (focused) base.border(BorderStroke(3.dp, Focus), shape) else base
 }
 
 @Composable
@@ -64,6 +73,6 @@ fun rememberFocus(): Pair<MutableInteractionSource, State<Boolean>> {
 @Composable
 fun Loading() {
     Box(Modifier.fillMaxSize().background(Background), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = Orange)
+        CircularProgressIndicator(color = Color.White)
     }
 }

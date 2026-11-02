@@ -2,6 +2,7 @@ package com.eberhard.hntube.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -47,6 +47,10 @@ import com.eberhard.hntube.data.Video
 
 private val tabs = listOf("Popular", "Recent", "Topics", "Later", "Search")
 
+/** Side padding: tight on the glasses' 480 px, roomy on a TV. */
+@Composable
+fun gutter() = if (isCompact()) 12.dp else 24.dp
+
 @Composable
 fun BrowseScreen(catalog: Catalog, marks: Marks, open: (Screen) -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
@@ -54,16 +58,17 @@ fun BrowseScreen(catalog: Catalog, marks: Marks, open: (Screen) -> Unit) {
     val later by marks.later.collectAsStateWithLifecycle()
 
     Column(Modifier.fillMaxSize()) {
+        // The chips scroll sideways where they don't fit (the glasses), with the one in focus kept in view.
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = gutter(), vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("HN", color = Orange, fontSize = 24.sp, fontWeight = FontWeight.Black)
-            Text("Tube", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Black)
-            Spacer(Modifier.width(28.dp))
+            Text("HN", color = Orange, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Text("Tube", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Black)
+            Spacer(Modifier.width(16.dp))
             tabs.forEachIndexed { i, name ->
                 Chip(name, selected = tab == i) { tab = i }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(6.dp))
             }
         }
         when (tab) {
@@ -86,31 +91,32 @@ fun Chip(label: String, selected: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(20.dp)
     Text(
         label,
-        color = if (selected || focused.value) Color.White else TextDim,
-        fontSize = 17.sp,
+        color = if (selected) Color.Black else if (focused.value) Color.White else TextDim,
+        fontSize = 16.sp,
         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
         modifier = Modifier
-            .focusFrame(interaction, shape, fill = true)
-            .let { if (selected) it.background(Orange.copy(alpha = 0.25f), shape) else it }
+            .focusFrame(interaction, shape, fill = !selected)
+            .let { if (selected) it.background(Color.White, shape) else it }
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 7.dp),
     )
 }
 
 @Composable
 fun Hint(text: String) {
-    Text(text, color = TextDim, fontSize = 17.sp, modifier = Modifier.padding(24.dp))
+    Text(text, color = TextDim, fontSize = 16.sp, modifier = Modifier.padding(gutter()))
 }
 
-/** The thumbnail grid: as many 300 dp columns as fit (4 on a TV, 1–2 on a phone). */
+/** The thumbnail grid: as many columns as fit (2 on the glasses, 4 on a TV, 1–2 on a phone). */
 @Composable
 fun VideoGrid(videos: List<Video>, marks: Marks, open: (Screen) -> Unit, header: (@Composable () -> Unit)? = null) {
     val watched by marks.watched.collectAsStateWithLifecycle()
+    val compact = isCompact()
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(300.dp),
-        contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        columns = GridCells.Adaptive(if (compact) 210.dp else 300.dp),
+        contentPadding = PaddingValues(start = gutter(), end = gutter(), bottom = 32.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 16.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         if (header != null) item(span = { GridItemSpan(maxLineSpan) }) { header() }
@@ -122,11 +128,10 @@ fun VideoGrid(videos: List<Video>, marks: Marks, open: (Screen) -> Unit, header:
 
 @Composable
 private fun TopicsList(catalog: Catalog, open: (Screen) -> Unit) {
-    val state = rememberLazyListState()
-    LazyColumn(state = state, contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 32.dp), modifier = Modifier.fillMaxSize()) {
+    LazyColumn(contentPadding = PaddingValues(start = gutter(), end = gutter(), bottom = 32.dp), modifier = Modifier.fillMaxSize()) {
         catalog.areas.forEach { area ->
             item(key = "area-" + area.id) {
-                Text(area.name, color = Orange, fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 20.dp, bottom = 8.dp))
+                Text(area.name, color = Heading, fontSize = 19.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp, bottom = 6.dp))
             }
             items(area.categories, key = { it.id }) { cat ->
                 val (interaction, _) = rememberFocus()
@@ -136,11 +141,11 @@ private fun TopicsList(catalog: Catalog, open: (Screen) -> Unit) {
                         .padding(vertical = 3.dp)
                         .focusFrame(interaction)
                         .clickable(interactionSource = interaction, indication = null) { open(Screen.Topic(cat.id)) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(cat.name, fontSize = 18.sp)
-                    Text("${catalog.countIn(cat.id)}", color = TextDim, fontSize = 16.sp)
+                    Text(cat.name, fontSize = 17.sp, modifier = Modifier.weight(1f))
+                    Text("${catalog.countIn(cat.id)}", color = TextDim, fontSize = 15.sp)
                 }
             }
         }
@@ -152,10 +157,10 @@ fun TopicScreen(catalog: Catalog, marks: Marks, categoryId: String, open: (Scree
     val cat = catalog.categories[categoryId]
     val videos = remember(categoryId) { catalog.inCategory(categoryId) }
     VideoGrid(videos, marks, open) {
-        Column(Modifier.padding(top = 20.dp, bottom = 8.dp)) {
-            Text(cat?.areaName ?: "", color = Orange, fontSize = 15.sp)
-            Text(cat?.name ?: categoryId, fontSize = 26.sp, fontWeight = FontWeight.Bold)
-            Text("${videos.size} videos HN recommends", color = TextDim, fontSize = 15.sp)
+        Column(Modifier.padding(top = 16.dp, bottom = 8.dp)) {
+            Text(cat?.areaName ?: "", color = Heading, fontSize = 14.sp)
+            Text(cat?.name ?: categoryId, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("${videos.size} videos HN recommends", color = TextDim, fontSize = 14.sp)
         }
     }
 }
@@ -171,10 +176,10 @@ private fun SearchTab(catalog: Catalog, marks: Marks, query: String, onQuery: (S
             placeholder = { Text("Title, channel, topic…") },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { }),
-            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Orange, cursorColor = Orange),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+            colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = Color.White, cursorColor = Color.White),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = gutter(), vertical = 6.dp),
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(6.dp))
         when {
             query.length < 2 -> Hint("Type at least two letters. Search also finds videos HN only cited.")
             results.isEmpty() -> Hint("Nothing for “$query”.")

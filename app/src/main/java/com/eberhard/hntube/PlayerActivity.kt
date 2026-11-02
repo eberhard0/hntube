@@ -13,20 +13,22 @@ import androidx.activity.ComponentActivity
 import com.eberhard.hntube.data.Video
 
 /**
- * Where the video plays. SmartTube first (the whole point on the Rokid Station), then the
+ * Where the video plays. SmartTube first (the whole point on the Rokid glasses), then the
  * YouTube TV or phone app, and only when neither exists YouTube's embedded player in a web view.
  */
 object Player {
     private val preferred = listOf(
-        "com.teamsmart.videomanager.tv",     // SmartTube (stable)
-        "com.liskovsoft.smarttubetv.beta",   // SmartTube (beta)
+        "org.smarttube.stable",              // SmartTube (stable, 32.x)
+        "org.smarttube.beta",                // SmartTube (beta, 32.x)
+        "com.teamsmart.videomanager.tv",     // SmartTube (older stable)
+        "com.liskovsoft.smarttubetv.beta",   // SmartTube (older beta)
         "com.google.android.youtube.tv",     // YouTube for Android TV
         "com.google.android.youtube",        // YouTube (phone)
     )
 
     /** Which app will play, for the button label: "Play in SmartTube". */
     fun playerName(context: Context): String = when (installed(context)) {
-        "com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv.beta" -> "SmartTube"
+        "org.smarttube.stable", "org.smarttube.beta", "com.teamsmart.videomanager.tv", "com.liskovsoft.smarttubetv.beta" -> "SmartTube"
         "com.google.android.youtube.tv", "com.google.android.youtube" -> "YouTube"
         null -> if (anyHandler(context)) "YouTube app" else "web player"
         else -> "YouTube"

@@ -3,12 +3,15 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- An Android TV app (Rokid Station, in the Rokid Air glasses) that also installs on a phone. -->
+    <!-- Runs on the Rokid Glasses themselves (Android 12 Go, 480x640 green display, installed through
+         Hi Rokid > Toolbox > Glasses App Management), on Android TV boxes and on phones. -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
     <!-- Playback is handed to SmartTube, or the YouTube app when SmartTube isn't installed. -->
     <queries>
+        <package android:name="org.smarttube.stable" />
+        <package android:name="org.smarttube.beta" />
         <package android:name="com.teamsmart.videomanager.tv" />
         <package android:name="com.liskovsoft.smarttubetv.beta" />
         <package android:name="com.google.android.youtube.tv" />

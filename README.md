@@ -1,7 +1,7 @@
 # HNTube
 
-The YouTube videos that Hacker News keeps telling each other to watch, as an Android TV app for
-the Rokid Station (watched in Rokid Air glasses) that also installs on a phone.
+The YouTube videos that Hacker News keeps telling each other to watch, as an app for the Rokid
+Glasses (installed on the glasses themselves, next to SmartTube), Android TV boxes and phones.
 
 Browse by Popular, Recently recommended, 150 topics, Save for later and Search. Every video shows
 why HN recommends it, a summary and the HN comments that said so. **Play** hands the video to
@@ -31,14 +31,15 @@ GitHub Actions (`.github/workflows/android.yml`) builds a signed release APK on 
 `main` and attaches it to a GitHub Release on `v*` tags. Signing needs the four repository secrets
 named in the workflow.
 
-## Install on the Rokid Station
+## Install on the Rokid Glasses
 
-Enable Developer options on the Station (Settings → Device Preferences → About → tap Build seven
-times), turn on USB/network debugging, then from a computer or phone on the same Wi-Fi:
+Same as SmartTube: put the APK on the phone, then Hi Rokid → Toolbox → Glasses App Management →
+install. The glasses run Android 12 Go with a 480×640 viewport; HNTube uses a compact one-column
+layout there. Navigation: single tap = select, two-finger swipe forward/back = next/previous item,
+side-button double-click = back. SmartTube (package `org.smarttube.stable`) must be on the glasses
+for playback; otherwise HNTube falls back to the YouTube app or its own web player.
 
-```sh
-adb connect <station-ip>
-adb install -r HNTube-<version>-release.apk
-```
+## Install on an Android TV box
 
-Or use any "send files to TV" app and open the APK on the Station.
+`adb connect <box-ip>` then `adb install -r HNTube-<version>-release.apk`, or any "send files to
+TV" app.
