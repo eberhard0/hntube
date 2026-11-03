@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.JsonReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
 import java.io.InputStreamReader
 import java.util.zip.GZIPInputStream
 
@@ -102,9 +103,19 @@ class Catalog(val generated: String, val areas: List<Area>, val videos: List<Vid
     }
 
     companion object {
+        /**
+         * The asset is plain JSON (the APK's own zip compression shrinks it to ~3 MB; a .gz asset
+         * came out of the build renamed and unpacked, so the 1.0.0 APK had no "hntube.json.gz").
+         * Gzip is still accepted, by its magic bytes, in case a build ever ships it packed.
+         */
         suspend fun load(context: Context): Catalog = withContext(Dispatchers.IO) {
-            context.assets.open("hntube.json.gz").use { raw ->
-                JsonReader(InputStreamReader(GZIPInputStream(raw), Charsets.UTF_8)).use { r -> read(r) }
+            context.assets.open("hntube.json").use { raw ->
+                val input = BufferedInputStream(raw, 64 * 1024).apply { mark(2) }
+                val b1 = input.read()
+                val b2 = input.read()
+                input.reset()
+                val stream = if (b1 == 0x1f && b2 == 0x8b) GZIPInputStream(input) else input
+                JsonReader(InputStreamReader(stream, Charsets.UTF_8)).use { r -> read(r) }
             }
         }
 

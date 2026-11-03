@@ -12,8 +12,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "1.0.0"
-val appVersionCode = 1
+val appVersionName = "1.0.1"
+val appVersionCode = 2
 
 base {
     archivesName = "HNTube-$appVersionName"

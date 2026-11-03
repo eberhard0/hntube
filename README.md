@@ -16,13 +16,13 @@ in the app's own storage.
 The videos, topics and HN comments come from [HackerTube](https://hackertube.org) by Andrej
 Karpathy (export of 2026-10-31, licence ODC-By 1.0, which in turn credits the
 [open-index/hacker-news](https://huggingface.co/datasets/open-index/hacker-news) archive).
-`tools/trim.py` turns the export into `app/src/main/assets/hntube.json.gz`; `tools/DATA.md` is
+`tools/trim.py` turns the export into `app/src/main/assets/hntube.json`; `tools/DATA.md` is
 HackerTube's description of the export.
 
 To refresh: download the export from hackertube.org, then
 
 ```sh
-python3 -I tools/trim.py <export-dir> hntube.json && gzip -9 -c hntube.json > app/src/main/assets/hntube.json.gz
+python3 -I tools/trim.py <export-dir> app/src/main/assets/hntube.json
 ```
 
 ## Build
