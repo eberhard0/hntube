@@ -59,6 +59,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -74,6 +75,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
 
-    // Thumbnails straight from i.ytimg.com.
-    implementation("io.coil-kt:coil-compose:2.7.0")
+    // Thumbnails straight from i.ytimg.com (Coil 3: built for current Compose; Coil 2 targets Compose 1.6).
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 }
