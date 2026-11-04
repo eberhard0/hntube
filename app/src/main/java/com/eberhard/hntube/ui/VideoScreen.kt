@@ -67,7 +67,7 @@ fun VideoCard(v: Video, watched: Boolean, onClick: () -> Unit) {
         }
         Spacer(Modifier.height(6.dp))
         Text(v.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis, lineHeight = 19.sp)
-        Text(v.channel + " · " + v.hnLine, color = TextDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(listOf(v.channel, v.hnLine).filter { it.isNotBlank() }.joinToString(" · "), color = TextDim, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -123,7 +123,7 @@ fun VideoScreen(catalog: Catalog, marks: Marks, v: Video, open: (Screen) -> Unit
         Spacer(Modifier.height(4.dp))
         Text(v.channel, color = Heading, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Text(
-            listOf(v.kind, v.level, v.topic).filter { it.isNotBlank() && it != "general" && it != "other" }.joinToString(" · ") + "\n" + v.hnLine,
+            listOf(v.kind, v.level, v.topic, v.hnLine).filter { it.isNotBlank() && it != "general" && it != "other" }.joinToString(" · "),
             color = TextDim, fontSize = 14.sp, lineHeight = 20.sp,
         )
         Spacer(Modifier.height(12.dp))
@@ -167,7 +167,7 @@ fun VideoScreen(catalog: Catalog, marks: Marks, v: Video, open: (Screen) -> Unit
                 Text(v.whyHn, fontSize = 17.sp, lineHeight = 24.sp, modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
             }
             if (v.summary.isNotBlank()) {
-                SectionTitle("What it is")
+                SectionTitle(if (v.fromYouTube) "Description" else "What it is")
                 Text(v.summary, fontSize = 16.sp, lineHeight = 23.sp, color = Color(0xFFE0E0E0), modifier = Modifier.padding(top = 4.dp, bottom = 14.dp))
             }
             if (v.quote.isNotBlank()) {
@@ -200,7 +200,7 @@ fun VideoScreen(catalog: Catalog, marks: Marks, v: Video, open: (Screen) -> Unit
                 }
             }
         }
-        item {
+        if (!v.fromYouTube) item {
             Spacer(Modifier.height(24.dp))
             Text("Data: HackerTube (hackertube.org) by Andrej Karpathy, ODC-By 1.0 · ${catalog.generated}", color = TextDim, fontSize = 11.sp)
         }

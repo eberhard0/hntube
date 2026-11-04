@@ -13,16 +13,19 @@ import androidx.compose.ui.Modifier
 import com.eberhard.hntube.data.Catalog
 import com.eberhard.hntube.data.Marks
 import com.eberhard.hntube.data.Video
+import com.eberhard.hntube.yt.Playlist
+import com.eberhard.hntube.yt.YouTubeStore
 
 /** Where the user is. A plain back stack: Browse is always at the bottom. */
 sealed interface Screen {
     data object Browse : Screen
     data class Topic(val categoryId: String) : Screen
     data class Detail(val video: Video) : Screen
+    data class PlaylistVideos(val playlist: Playlist) : Screen
 }
 
 @Composable
-fun App(catalog: Catalog, marks: Marks) {
+fun App(catalog: Catalog, marks: Marks, yt: YouTubeStore) {
     val stack = remember { mutableStateListOf<Screen>(Screen.Browse) }
     val top = stack.last()
     BackHandler(enabled = stack.size > 1) { stack.removeAt(stack.lastIndex) }
@@ -30,9 +33,10 @@ fun App(catalog: Catalog, marks: Marks) {
 
     Box(Modifier.fillMaxSize().background(Background).safeDrawingPadding()) {
         when (top) {
-            Screen.Browse -> BrowseScreen(catalog, marks, open)
+            Screen.Browse -> BrowseScreen(catalog, marks, yt, open)
             is Screen.Topic -> TopicScreen(catalog, marks, top.categoryId, open)
             is Screen.Detail -> VideoScreen(catalog, marks, top.video, open)
+            is Screen.PlaylistVideos -> PlaylistScreen(yt, marks, top.playlist, open)
         }
     }
 }

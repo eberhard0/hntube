@@ -21,6 +21,7 @@ import com.eberhard.hntube.data.Marks
 import com.eberhard.hntube.ui.App
 import com.eberhard.hntube.ui.HNTubeTheme
 import com.eberhard.hntube.ui.Loading
+import com.eberhard.hntube.yt.YouTubeStore
 
 class MainActivity : ComponentActivity() {
     private var focusManager: FocusManager? = null
@@ -29,6 +30,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         CrashReport.install(this)
         val marks = Marks(applicationContext)
+        val yt = youTube ?: YouTubeStore(applicationContext).also { youTube = it }
         setContent {
             HNTubeTheme {
                 focusManager = LocalFocusManager.current
@@ -37,7 +39,7 @@ class MainActivity : ComponentActivity() {
                     if (catalog == null) catalog = Catalog.load(applicationContext).also { loaded = it }
                 }
                 val c = catalog
-                if (c == null) Loading() else App(c, marks)
+                if (c == null) Loading() else App(c, marks, yt)
             }
         }
     }
@@ -81,5 +83,7 @@ class MainActivity : ComponentActivity() {
 
         /** Parsed once per process; folding or rotating the screen must not reload 6,000 videos. */
         var loaded: Catalog? = null
+        /** Likewise the signed-in account's lists survive a fold/unfold. */
+        var youTube: YouTubeStore? = null
     }
 }

@@ -45,6 +45,11 @@ data class Video(
     val related: List<String>,
     val comments: List<HnComment>,
 ) {
+    companion object
+
+    /** From YouTube itself, not HackerTube: no HN comments, no topics. */
+    val fromYouTube: Boolean get() = score < 0
+
     val youtubeUrl: String get() = "https://www.youtube.com/watch?v=$id"
     val embedUrl: String get() = "https://www.youtube-nocookie.com/embed/$id?autoplay=1&playsinline=1&rel=0"
     /** A frame from the middle of the video, like HackerTube shows (no API key needed). */
@@ -53,11 +58,20 @@ data class Video(
     /** "20 HN recommenders · 2018–2026". */
     val hnLine: String
         get() {
+            if (fromYouTube) return if (lastMonth.isEmpty()) "" else "added $lastMonth"
             val years = if (firstYear == 0) "" else if (firstYear == lastYear) " · $firstYear" else " · $firstYear–$lastYear"
             return if (recommenders == 0) "cited on HN, never recommended$years"
             else "$recommenders HN recommender${if (recommenders == 1) "" else "s"}$years"
         }
 }
+
+/** A video from the user's own YouTube playlists: the fields the API gives, nothing from HN. */
+fun Video.Companion.plain(id: String, title: String, channel: String, summary: String, added: String) = Video(
+    id = id, title = title, channel = channel, summary = summary, whyHn = "", kind = "", level = "", news = false,
+    topic = "", tags = emptyList(), categories = emptyList(), quote = "", quoteId = 0, quoteYear = "", mentions = 0,
+    recommenders = 0, firstYear = 0, lastYear = 0, lastMonth = added, score = -1.0, related = emptyList(),
+    comments = emptyList(),
+)
 
 data class Category(val id: String, val name: String, val areaId: String, val areaName: String)
 data class Area(val id: String, val name: String, val categories: List<Category>)

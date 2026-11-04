@@ -53,6 +53,9 @@ jobs:
           EOF
 
       - name: Build release APK
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
         run: |
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease

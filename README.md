@@ -11,6 +11,19 @@ embedded player.
 Everything is on the device: no account, no server, and the browsing marks (watched, saved) stay
 in the app's own storage.
 
+## Your own YouTube playlists
+
+The first tabs are the signed-in account's **Playlists** (private ones included) and **Liked**
+videos, read through the YouTube Data API. Sign-in is Google's limited-input flow: the app shows
+a code, you enter it at google.com/device on a phone. Watch Later and History are not available
+to any app (Google removed them from the API in 2016).
+
+Setup, once, in the owner's Google Cloud project: enable *YouTube Data API v3*; configure the
+OAuth consent screen (External) and **publish** it (an app left "In testing" gets refresh tokens
+that die after 7 days); create an OAuth client of type **TVs and Limited Input devices**; put its
+ID and secret in the repo secrets `YT_CLIENT_ID` and `YT_CLIENT_SECRET`. Without them the build
+still works, with the YouTube tabs explaining that sign-in is off.
+
 ## Data
 
 The videos, topics and HN comments come from [HackerTube](https://hackertube.org) by Andrej

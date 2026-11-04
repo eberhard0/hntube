@@ -44,15 +44,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.eberhard.hntube.data.Catalog
 import com.eberhard.hntube.data.Marks
 import com.eberhard.hntube.data.Video
+import com.eberhard.hntube.yt.YouTubeStore
 
-private val tabs = listOf("Popular", "Recent", "Topics", "Later", "Search")
+// Your own YouTube first, then what Hacker News recommends.
+private val tabs = listOf("Playlists", "Liked", "HN Popular", "HN Recent", "HN Topics", "Later", "Search")
 
 /** Side padding: tight on the glasses' 480 px, roomy on a TV. */
 @Composable
 fun gutter() = if (isCompact()) 12.dp else 24.dp
 
 @Composable
-fun BrowseScreen(catalog: Catalog, marks: Marks, open: (Screen) -> Unit) {
+fun BrowseScreen(catalog: Catalog, marks: Marks, yt: YouTubeStore, open: (Screen) -> Unit) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var query by rememberSaveable { mutableStateOf("") }
     val later by marks.later.collectAsStateWithLifecycle()
@@ -72,15 +74,17 @@ fun BrowseScreen(catalog: Catalog, marks: Marks, open: (Screen) -> Unit) {
             }
         }
         when (tab) {
-            0 -> VideoGrid(catalog.popular, marks, open)
-            1 -> VideoGrid(catalog.recent, marks, open)
-            2 -> TopicsList(catalog, open)
-            3 -> {
+            0 -> PlaylistsTab(yt, open)
+            1 -> LikedTab(yt, marks, open)
+            2 -> VideoGrid(catalog.popular, marks, open)
+            3 -> VideoGrid(catalog.recent, marks, open)
+            4 -> TopicsList(catalog, open)
+            5 -> {
                 val videos = later.mapNotNull { catalog[it] }
-                if (videos.isEmpty()) Hint("Nothing saved yet. Open a video and press “Save for later”.")
+                if (videos.isEmpty()) Hint("Nothing saved yet. Open a Hacker News video and press “Save for later”.")
                 else VideoGrid(videos, marks, open)
             }
-            4 -> SearchTab(catalog, marks, query, { query = it }, open)
+            6 -> SearchTab(catalog, marks, query, { query = it }, open)
         }
     }
 }

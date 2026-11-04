@@ -12,8 +12,8 @@ val signingProps = Properties().apply {
 }
 
 // The app version; versionCode must go up by one with every release.
-val appVersionName = "1.0.1"
-val appVersionCode = 2
+val appVersionName = "1.1.0"
+val appVersionCode = 3
 
 base {
     archivesName = "HNTube-$appVersionName"
@@ -32,6 +32,12 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
+        // Google sign-in ("TVs and Limited Input devices" OAuth client of the owner's own Cloud
+        // project). CI passes the repo secrets as environment variables; locally they can go in
+        // ~/.gradle/gradle.properties as ytClientId / ytClientSecret. Empty = sign-in disabled.
+        fun secret(env: String, prop: String) = (System.getenv(env) ?: project.findProperty(prop) as String? ?: "").trim()
+        buildConfigField("String", "YT_CLIENT_ID", "\"${secret("YT_CLIENT_ID", "ytClientId")}\"")
+        buildConfigField("String", "YT_CLIENT_SECRET", "\"${secret("YT_CLIENT_SECRET", "ytClientSecret")}\"")
     }
 
     signingConfigs {
